@@ -3,25 +3,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { cwd } from 'process';
 
-interface Message {
-    msgid: string;
-    msgstr: string[];
-};
+import type { IFile } from "message";
 
-interface File {
-    charset: string;
-    headers: Record<string, string>;
-    translations: {
-        [context: string]: {
-            [msgid: string]: Message;
-        };
-    };
-};
+const args = process.argv.slice(2);
 
-const input = fs.readFileSync(path.join(__dirname, "../global.mo"));
+const textFilePath = path.join(cwd(), "../global.mo");
+const csvPath = args[0];
 
-const mo = gettextParser.mo.parse(input) as File;
-const csv = fs.readFileSync(path.join(__dirname, "../names.csv"), "utf-8");
+if (!fs.existsSync(textFilePath)) {
+    console.error(`Error: File ${textFilePath} does not exist.`);
+    process.exit(1);
+}
+
+if (!csvPath || path.extname(csvPath) !== ".csv") {
+    console.error("Error: The provided file is not a CSV file.");
+    process.exit(1);
+}
+
+const input = fs.readFileSync(textFilePath);
+
+const mo = gettextParser.mo.parse(input) as IFile;
+const csv = fs.readFileSync(csvPath, "utf-8");
 
 const lines = csv.split("\n").slice(1); // Skip header line
 
@@ -43,4 +45,4 @@ for (const line of lines) {
 }
 
 const poOutput = gettextParser.mo.compile(mo);
-fs.writeFileSync("u_global.mo", poOutput);
+fs.writeFileSync("output_global.mo", poOutput);
